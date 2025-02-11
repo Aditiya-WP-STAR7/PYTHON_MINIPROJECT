@@ -6,6 +6,8 @@ import os
 import time
 import socket
 import requests
+import random
+import re
 from colorama import Fore, Style, init
 from prettytable import PrettyTable
 from datetime import datetime
@@ -409,6 +411,10 @@ def kelola_barang():
 
 from datetime import datetime
 
+import re
+from datetime import datetime
+from colorama import Fore, Style
+
 def sewa_produk():
     print_produk()
 
@@ -418,23 +424,59 @@ def sewa_produk():
     print("╚════════════════════════════════╝")
 
     try:
-        id_produk = int(input(Fore.CYAN + "\n🆔 Masukkan ID produk yang ingin disewa: " + Fore.RESET))
+        # Input ID Produk
+        while True:
+            id_produk_input = input(Fore.CYAN + "\n🆔 Masukkan ID produk yang ingin disewa (ketik 'batal' untuk keluar): " + Fore.RESET)
+            if id_produk_input.lower() == "batal":
+                print(Fore.RED + "❌ Penyewaan dibatalkan.\n")
+                return
+            if id_produk_input.isdigit():
+                id_produk = int(id_produk_input)
+                break
+            print(Fore.RED + "⚠️  ID produk harus berupa angka!")
 
+        # Cek ketersediaan produk
         produk = next((p for p in produk_db if p["id"] == id_produk and p["status"] == "Tersedia"), None)
-
         if not produk:
             print(Fore.RED + "❌ Produk tidak tersedia atau sudah disewa!")
             return
 
-        hari_rental = int(input(Fore.CYAN + "📅 Masukkan durasi rental dalam hari: " + Fore.RESET))
-        waktu_sekarang = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        # Input Durasi Rental
+        while True:
+            hari_rental_input = input(Fore.CYAN + "📅 Masukkan durasi rental dalam hari (ketik 'batal' untuk keluar): " + Fore.RESET)
+            if hari_rental_input.lower() == "batal":
+                print(Fore.RED + "❌ Penyewaan dibatalkan.\n")
+                return
+            if hari_rental_input.isdigit():
+                hari_rental = int(hari_rental_input)
+                break
+            print(Fore.RED + "⚠️  Durasi rental harus berupa angka!")
 
+        # Hitung total harga
+        waktu_sekarang = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         total_harga = produk["harga"] * hari_rental
         print(Fore.GREEN + f"\n💰 Harga sewa per hari: Rp {produk['harga']:,}")
         print(Fore.GREEN + f"💵 Total sewa untuk {hari_rental} hari: Rp {total_harga:,}")
 
-        nama_pengguna = input(Fore.CYAN + "👤 Masukkan nama pengguna: " + Fore.RESET)
-        no_telepon = input(Fore.CYAN + "📞 Masukkan nomor telepon: " + Fore.RESET)
+        # Input Nama Pengguna
+        while True:
+            nama_pengguna = input(Fore.CYAN + "👤 Masukkan nama pengguna (ketik 'batal' untuk keluar): " + Fore.RESET)
+            if nama_pengguna.lower() == "batal":
+                print(Fore.RED + "❌ Penyewaan dibatalkan.\n")
+                return
+            if nama_pengguna.strip():
+                break
+            print(Fore.RED + "⚠️  Nama pengguna tidak boleh kosong!")
+
+        # Input Nomor Telepon dengan Validasi
+        while True:
+            no_telepon = input(Fore.CYAN + "📞 Masukkan nomor telepon (ketik 'batal' untuk keluar): " + Fore.RESET)
+            if no_telepon.lower() == "batal":
+                print(Fore.RED + "❌ Penyewaan dibatalkan.\n")
+                return
+            if re.match(r"^\+?[0-9]{10,15}$", no_telepon):
+                break
+            print(Fore.RED + "⚠️  Nomor telepon tidak valid! Masukkan angka 10-15 digit (Contoh: +6281234567890 atau 081234567890)")
 
         # Tambahkan data penyewaan ke database
         rental_db.append({
@@ -459,8 +501,9 @@ def sewa_produk():
         save_data()
 
     except ValueError:
-        print(Fore.RED + "⚠️  Input tidak valid! Harap masukkan angka yang benar.")
-
+        print(Fore.RED + "⚠️  Input tidak valid! Harap masukkan angka yang benar.")()
+        
+        
 def admin_menu():
     password = "admin123"  
     attempts = 0
@@ -541,11 +584,52 @@ def riwayat_penyewaan():
     else:
         print("\nTidak ada riwayat penyewaan.")
 
+from prettytable import PrettyTable
+
 def laporan_pendapatan():
-    total_pendapatan = sum(sewa["total_harga"] for sewa in rental_db if sewa["status"] == "Sudah Dikembalikan")
-    print(f"\n--- Laporan Pendapatan ---")
-    print(f"Total Pendapatan dari Penyewaan: Rp {total_pendapatan:,}")
-    input("\nTekan Enter untuk kembali ke menu admin...")
+    if not rental_db:
+        print("\n⚠️ Tidak ada data penyewaan yang tersedia!")
+        input("\nTekan Enter untuk kembali ke menu admin...")
+        return
+
+    total_pendapatan = sum(sewa["total_harga"] for sewa in rental_db if "status" in sewa and sewa["status"] == "Sudah Dikembalikan")
+
+    table = PrettyTable()
+    table.field_names = ["No", "Nama Barang", "Total Harga (Rp)", "Tanggal"]
+    
+    transaksi_per_bulan = {}
+    transaksi_list = []
+    
+    for idx, sewa in enumerate(rental_db, start=1):
+        if "status" in sewa and sewa["status"] == "Sudah Dikembalikan":
+            if all(k in sewa for k in ["barang", "total_harga", "tanggal"]):
+                table.add_row([idx, sewa["barang"], f"Rp {sewa['total_harga']:,}", sewa["tanggal"]])
+                transaksi_list.append((sewa["barang"], sewa["total_harga"]))
+
+                bulan = sewa["tanggal"][:7]  
+                transaksi_per_bulan[bulan] = transaksi_per_bulan.get(bulan, 0) + sewa["total_harga"]
+
+    print("\n📜 --- Laporan Pendapatan --- 📜")
+    print(table)
+
+    if transaksi_per_bulan:
+        print("\n📊 Grafik ASCII - Pendapatan per Bulan:")
+        for bulan, pendapatan in sorted(transaksi_per_bulan.items()):
+            bar = "█" * max(1, pendapatan // 100000)  
+            print(f"🗓 {bulan}: {bar} Rp {pendapatan:,}")
+
+    if transaksi_list:
+        total_all = sum(p[1] for p in transaksi_list)
+        if total_all > 0:
+            print("\n🍰 Grafik ASCII - Distribusi Pendapatan:")
+            for barang, pendapatan in transaksi_list:
+                percentage = (pendapatan / total_all) * 100
+                bar = "■" * max(1, int(percentage // 2))  
+                print(f"{barang.ljust(15)} | {bar} {percentage:.1f}%")
+
+    print(f"\n💰 Total Pendapatan dari Penyewaan: Rp {total_pendapatan:,}")
+    input("\n🔙 Tekan Enter untuk kembali ke menu admin...")
+
 
 import webbrowser
 
@@ -580,6 +664,7 @@ def main_menu():
             database_menu()
         elif choice == '4':
             tentang_kami()
+            menu_tentang_kami()
         elif choice == '5':
             menu_feedback()
         elif choice == '6':  
@@ -630,11 +715,17 @@ def tampil_cara_menyewa():
     print("\n" + HIJAU + "="*50 + PUTIH)
     print("                 CARA MENYEWA")
     print(HIJAU + "="*50 + PUTIH)
-    print("1. Daftarkan akun Anda melalui sistem CLI.")
-    print("2. Login ke sistem menggunakan kredensial Anda.")
-    print("3. Pilih alat pentesting yang ingin disewa.")
-    print("4. Lakukan pembayaran sesuai dengan durasi penyewaan.")
-    print("5. Unduh dan gunakan alat sesuai kebutuhan.")
+    print("1. Masuk ke Menu User -> Sewa Produk")
+    print("2. Isi Data yang Kami Perlukan dengan benar Khususnya No Telepon / WA yang bisa dihubungi.")
+    print("3. Jika Data Salah Khususnya No Telepon/No WA Maka Konfirmasi Penyewaan Kami Batalkan.")
+    print("4. Kami Akan Melakukan Konfirmasi Pembayaran Melalui WA dengan Pembayaran Paypal.")
+    print("5. Akun dan Password akan Kami Kirimkan lewat WA.")
+    print("6. Silahkan Anda Login di Software Akun yang Anda Sewa dengan Akun dan Password yang telah Kami Kirimkan.")
+    print("7. Anda bebas Melakukan Apa saja Selama tidak Menentang Kebijakan.")
+    print("8. Semua Pergerakan Kami Awasi. Seandainya Anda Menentang Kebijakan, Maka Kami berhak Menarik dan Melaporkan Anda.")
+    print("9. Selama Penyewaan, Anda boleh Menanyakan Apapun terkait Tutorial Hacking dan Sebagainya.")
+    print("10. Ketika Waktu Rental Selesai, Kami berhak Mengganti Akun dan Password.")
+    print("11. Jika Ada Pertanyaan Silahkan WA ke Kami dengan Ketik WA.")
     print(HIJAU + "="*50 + PUTIH)
 
 
@@ -662,6 +753,7 @@ def menu_tentang_kami():
         print("[1] Kontak")
         print("[2] Lisensi")
         print("[3] Cara Menyewa")
+        print("[WA] Kontak Langsung")
         print("[4] Kembali ke Menu Utama")
         print(HIJAU + "="*50 + PUTIH)
 
@@ -672,6 +764,8 @@ def menu_tentang_kami():
             tampil_lisensi()
         elif pilihan == "3":
             tampil_cara_menyewa()
+        elif pilihan == "WA":
+            webbrowser.open(f"https://wa.me/+6289516028710")
         elif pilihan == "4":
             print("\nKembali ke Menu Utama...")
             break
@@ -905,7 +999,6 @@ def simulasi_sederhana():
             print("\n❌ Pilihan tidak valid!")
 
         input("\n🔄 Tekan Enter untuk kembali ke menu...")
-
 
 
 # Menjalankan program
