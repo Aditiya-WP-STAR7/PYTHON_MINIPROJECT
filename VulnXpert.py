@@ -8,6 +8,12 @@ import socket
 import requests
 import random
 import re
+import base64
+import random
+import hashlib
+from Crypto.Cipher import AES
+from Crypto.Util.Padding import pad, unpad
+from Crypto.Random import get_random_bytes
 from colorama import Fore, Style, init
 from prettytable import PrettyTable
 from datetime import datetime
@@ -652,9 +658,10 @@ def main_menu():
         print("5. Menu Feedback") 
         print("6. Tutorial YouTube")
         print("7. Simulasi Sederhana")
-        print("8. Keluar")
+        print("8. CTF Game")
+        print("9. Keluar")
         
-        choice = input("Pilih menu (1/2/3/4/5/6/7): ")
+        choice = input("Pilih menu (1/2/3/4/5/6/7/8/9): ")
 
         if choice == '1':
             admin_menu()
@@ -683,6 +690,8 @@ def main_menu():
         elif choice == '7':
             simulasi_sederhana()
         elif choice == '8':
+            ctf()  # ← Perbaiki indentasi di sini!
+        elif choice == '9':
             save_data()
             print("Terima kasih telah menggunakan aplikasi rental barang!")
             break
@@ -773,10 +782,29 @@ def menu_tentang_kami():
             print("\nPilihan tidak Valid, Silahkan Masukkan pilihan yang Valid.")
             
         
+init(autoreset=True)  # Inisialisasi colorama untuk warna terminal
+
 feedback_file = "feedback.json"
+
+def print_animated(text, delay=0.02):
+    """Animasi teks muncul satu per satu"""
+    for char in text:
+        print(char, end="", flush=True)
+        time.sleep(delay)
+    print()
+
 def beri_feedback():
-    feedback = input("\nSilakan tuliskan feedback atau saran Anda: ")
-    nama_pengguna = input("Masukkan nama Anda (Opsional, tekan Enter jika ingin anonim): ")
+    print("\n" + "="*50)
+    print("💬 Silakan tuliskan feedback atau saran Anda")
+    print("="*50)
+    
+    feedback = input("Masukkan feedback: ").strip()
+    if not feedback:
+        print("⚠️  Feedback tidak boleh kosong!")
+        time.sleep(1)
+        return
+
+    nama_pengguna = input("Masukkan nama Anda (Opsional, Enter jika anonim): ").strip()
     waktu = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
     data_feedback = {
@@ -796,41 +824,57 @@ def beri_feedback():
     with open(feedback_file, 'w') as f:
         json.dump(all_feedback, f, indent=4)
 
-    print("\nTerima kasih atas feedback Anda!")
-            
+    print("\n✅ Terima kasih atas feedback Anda!")
+    time.sleep(1.5)
+
 def lihat_feedback():
     if not os.path.exists(feedback_file):
-        print("\nBelum ada feedback dari pengguna.")
+        print("\n🚫 Belum ada feedback dari pengguna.")
+        time.sleep(1.5)
         return
 
     with open(feedback_file, 'r') as f:
         all_feedback = json.load(f)
 
-    print("\n--- Daftar Feedback Pengguna ---")
+    print("\n" + "="*50)
+    print("📜 Daftar Feedback Pengguna")
+    print("="*50)
+
     if not all_feedback:
-        print("Belum ada feedback yang tersimpan.")
+        print("⚠️  Belum ada feedback yang tersimpan.")
     else:
         for i, fb in enumerate(all_feedback, 1):
-            print(f"\n{i}. Waktu: {fb['waktu']}\n   Nama: {fb['nama']}\n   Feedback: {fb['feedback']}")
+            print(f"\n[{i}] {fb['waktu']}")
+            print(f"Nama     : {fb['nama']}")
+            print(f"Feedback : {fb['feedback']}")
+            print("-"*50)
 
     input("\nTekan Enter untuk kembali ke menu...")
 
 def menu_feedback():
     while True:
-        print("\n--- Menu Feedback ---")
+        print("\n" + "="*50)
+        print("📢  MENU FEEDBACK")
+        print("="*50)
         print("1. Lihat Feedback")
         print("2. Kasih Feedback")
         print("3. Kembali ke Menu Utama")
-        choice = input("Pilih menu (1/2/3): ")
+        print("="*50)
+
+        choice = input("Pilih menu (1/2/3): ").strip()
 
         if choice == '1':
             lihat_feedback()
         elif choice == '2':
             beri_feedback()
         elif choice == '3':
+            print("\n👋 Kembali ke menu utama...")
+            time.sleep(1)
             return
         else:
-            print("Pilihan tidak valid, silakan coba lagi.")
+            print("⚠️  Pilihan tidak valid, silakan coba lagi!")
+            time.sleep(1)
+
             
             # Efek Terminal
 def loading_effect(text, delay=0.05):
@@ -999,7 +1043,167 @@ def simulasi_sederhana():
             print("\n❌ Pilihan tidak valid!")
 
         input("\n🔄 Tekan Enter untuk kembali ke menu...")
+        
+        # ==============[ CHALLENGE 1: ADVANCED CRYPTOGRAPHY ]==============
+def cryptography_challenge():
+    print("\n🔐 [Challenge: Advanced Cryptography] 🔐")
+    
+    key = get_random_bytes(16)  # AES-128 Key
+    cipher = AES.new(key, AES.MODE_ECB)
+    
+    plaintext = b'FLAG{SUPER_SECURE_AES}'  # Flag Terenkripsi
+    padded_text = pad(plaintext, AES.block_size)
+    encrypted_flag = cipher.encrypt(padded_text)
+    
+    print(f"Encrypted Flag (Base64): {base64.b64encode(encrypted_flag).decode()}")
 
+    while True:
+        user_input = input("Masukkan flag yang benar (atau ketik 'exit' untuk kembali ke menu CTF): ")
+        if user_input.lower() == "exit":
+            print("🔄 Kembali ke menu CTF...\n")
+            return False  # Kembali ke menu CTF
+        elif user_input == plaintext.decode():
+            print("✅ Benar! Kamu menyelesaikan tantangan Advanced Cryptography!")
+            return True
+        else:
+            print("❌ Salah! Coba lagi.")
+
+# ==============[ CHALLENGE 2: REVERSE ENGINEERING ]==============
+def reverse_engineering_challenge():
+    print("\n🛠️ [Challenge: Reverse Engineering] 🛠️")
+    
+    secret_number = random.randint(1000, 9999)
+    hashed_number = hashlib.sha256(str(secret_number).encode()).hexdigest()
+    
+    print(f"SHA-256 dari nomor rahasia: {hashed_number}")
+    
+    while True:
+        user_input = input("Tebak nomor rahasia (atau 'exit' untuk kembali ke menu CTF): ")
+        if user_input.lower() == "exit":
+            print("🔄 Kembali ke menu CTF...\n")
+            return False
+        elif user_input == str(secret_number):
+            print("✅ Benar! Kamu berhasil reverse hash SHA-256!")
+            return True
+        else:
+            print("❌ Salah! Coba lagi.")
+
+# ==============[ CHALLENGE 3: BINARY EXPLOITATION ]==============
+def binary_exploitation_challenge():
+    print("\n🏴‍☠️ [Challenge: Binary Exploitation] 🏴‍☠️")
+    
+    binary_data = b"\x46\x4c\x41\x47\x7b\x42\x55\x46\x46\x45\x52\x5f\x4f\x56\x45\x52\x46\x4c\x4f\x57\x7d"
+    hidden_flag = binary_data.decode("utf-8", "ignore")
+    
+    while True:
+        user_input = input("Masukkan flag yang benar (atau 'exit' untuk kembali ke menu CTF): ")
+        if user_input.lower() == "exit":
+            print("🔄 Kembali ke menu CTF...\n")
+            return False
+        elif user_input == hidden_flag:
+            print("✅ Benar! Kamu berhasil memecahkan eksploitasi biner!")
+            return True
+        else:
+            print("❌ Salah! Coba lagi.")
+
+# ==============[ CHALLENGE 4: WEB EXPLOITATION ]==============
+def web_exploitation_challenge():
+    print("\n🌐 [Challenge: Web Exploitation] 🌐")
+    
+    admin_password = "FLAG{SQLi_INJECTION}"
+    hashed_password = hashlib.md5(admin_password.encode()).hexdigest()
+    
+    print(f"MD5 hash password admin: {hashed_password}")
+    
+    while True:
+        user_input = input("Masukkan password admin yang sebenarnya (atau 'exit' untuk kembali ke menu CTF): ")
+        if user_input.lower() == "exit":
+            print("🔄 Kembali ke menu CTF...\n")
+            return False
+        elif user_input == admin_password:
+            print("✅ Benar! Kamu berhasil melakukan SQL Injection!")
+            return True
+        else:
+            print("❌ Salah! Coba lagi.")
+
+# ==============[ CHALLENGE 5: NETWORKING ]==============
+def networking_challenge():
+    print("\n📡 [Challenge: Networking] 📡")
+    
+    secret_ip = "192.168.1.133"
+    encoded_ip = base64.b64encode(secret_ip.encode()).decode()
+    
+    print(f"Encoded IP Address (Base64): {encoded_ip}")
+    
+    while True:
+        user_input = input("Masukkan IP Address yang benar (atau 'exit' untuk kembali ke menu CTF): ")
+        if user_input.lower() == "exit":
+            print("🔄 Kembali ke menu CTF...\n")
+            return False
+        elif user_input == secret_ip:
+            print("✅ Benar! Kamu berhasil mendekripsi alamat IP!")
+            return True
+        else:
+            print("❌ Salah! Coba lagi.")
+
+# ==============[ CHALLENGE 6: STEGANOGRAPHY ]==============
+def steganography_challenge():
+    print("\n🔎 [Challenge: Steganography] 🔎")
+    
+    hidden_message = "FLAG{INVISIBLE_TEXT}"
+    stego_text = f"Hello World! This is a secret message: {hidden_message[::-1]}"
+    
+    print(f"Teks Steganografi: {stego_text}")
+    
+    while True:
+        user_input = input("Masukkan flag yang tersembunyi (atau 'exit' untuk kembali ke menu CTF): ")
+        if user_input.lower() == "exit":
+            print("🔄 Kembali ke menu CTF...\n")
+            return False
+        elif user_input == hidden_message:
+            print("✅ Benar! Kamu berhasil memecahkan steganografi!")
+            return True
+        else:
+            print("❌ Salah! Coba lagi.")
+
+# ==============[ MENU UTAMA CTF ]==============
+def ctf():
+    while True:  # Loop agar selalu kembali ke menu CTF
+        print("\n🏆 WELCOME TO ULTIMATE CTF CHALLENGE 🏆\n")
+        
+        print("1. Advanced Cryptography 🔐")
+        print("2. Reverse Engineering 🛠️")
+        print("3. Binary Exploitation 🏴‍☠️")
+        print("4. Web Exploitation 🌐")
+        print("5. Networking 📡")
+        print("6. Steganography 🔎")
+        print("0. Keluar ke Menu Utama ❌")
+
+        choice = input("Masukkan pilihan: ")
+
+        challenges = [
+            cryptography_challenge,
+            reverse_engineering_challenge,
+            binary_exploitation_challenge,
+            web_exploitation_challenge,
+            networking_challenge,
+            steganography_challenge
+        ]
+
+        if choice == "0":
+            print("👋 Kembali ke menu utama...")
+            break  # Kembali ke menu utama
+
+        try:
+            challenge_index = int(choice) - 1
+            if 0 <= challenge_index < len(challenges):
+                result = challenges[challenge_index]()  # Jalankan tantangan
+                if result is False:  # Jika user memilih "exit", kembali ke menu CTF
+                    continue  
+            else:
+                print("❌ Pilihan tidak valid.")
+        except ValueError:
+            print("❌ Masukkan angka yang valid.")
 
 # Menjalankan program
 if __name__ == "__main__":
