@@ -651,10 +651,10 @@ def main_menu():
     
     while True:
         print("\n--- Menu Utama ---")
-        print("1. Menu Admin")
-        print("2. Menu User")
+        print("1. Tentang Kami & Cara Menyewa")
+        print("2. Menu Admin")
         print("3. Menu Database")
-        print("4. Tentang Kami")
+        print("4. Menu User")
         print("5. Menu Feedback") 
         print("6. Tutorial YouTube")
         print("7. Simulasi Sederhana")
@@ -664,21 +664,21 @@ def main_menu():
         choice = input("Pilih menu (1/2/3/4/5/6/7/8/9): ")
 
         if choice == '1':
-            admin_menu()
+            tentang_kami()
+            menu_tentang_kami()
         elif choice == '2':
-            user_menu()
+            admin_menu()
         elif choice == '3':
             database_menu()
         elif choice == '4':
-            tentang_kami()
-            menu_tentang_kami()
+            user_menu()
         elif choice == '5':
             menu_feedback()
         elif choice == '6':  
             print("\n--- Tutorial YouTube ---")
             print("1. BELAJAR METASPLOIT")
             print("2. BELAJAR NESSUS")
-            print("3. BELAJAR METASPLOIT PRO")
+            print("3. BELAJAR BURP SUITE")
             
             pilih = input("Pilih: ")
             
@@ -1044,38 +1044,55 @@ def simulasi_sederhana():
 
         input("\n🔄 Tekan Enter untuk kembali ke menu...")
         
-        # ==============[ CHALLENGE 1: ADVANCED CRYPTOGRAPHY ]==============
+        
+from Crypto.PublicKey import RSA
+from Crypto.Cipher import PKCS1_OAEP
+from Crypto.Random import get_random_bytes
+
+
+# ==============[ Challenge 1: Advanced Cryptography (Layered Encryption) ]==============
 def cryptography_challenge():
     print("\n🔐 [Challenge: Advanced Cryptography] 🔐")
     
-    key = get_random_bytes(16)  # AES-128 Key
-    cipher = AES.new(key, AES.MODE_ECB)
+    # Generate AES key and RSA public/private keys
+    aes_key = get_random_bytes(16)  # AES-128 Key
+    rsa_key = RSA.generate(2048)
+    public_key = rsa_key.publickey()
+    cipher_aes = AES.new(aes_key, AES.MODE_ECB)
     
-    plaintext = b'FLAG{SUPER_SECURE_AES}'  # Flag Terenkripsi
+    plaintext = b'FLAG{SUPER_SECURE_AES_RSA}'
     padded_text = pad(plaintext, AES.block_size)
-    encrypted_flag = cipher.encrypt(padded_text)
+    encrypted_flag_aes = cipher_aes.encrypt(padded_text)
     
-    print(f"Encrypted Flag (Base64): {base64.b64encode(encrypted_flag).decode()}")
+    # Encrypt AES key with RSA public key
+    cipher_rsa = PKCS1_OAEP.new(public_key)
+    encrypted_aes_key = cipher_rsa.encrypt(aes_key)
+    
+    # Output
+    print(f"Encrypted Flag (AES + RSA) : {base64.b64encode(encrypted_flag_aes).decode()}")
+    print(f"Encrypted AES Key (RSA): {base64.b64encode(encrypted_aes_key).decode()}")
 
     while True:
         user_input = input("Masukkan flag yang benar (atau ketik 'exit' untuk kembali ke menu CTF): ")
         if user_input.lower() == "exit":
             print("🔄 Kembali ke menu CTF...\n")
-            return False  # Kembali ke menu CTF
+            return False
         elif user_input == plaintext.decode():
             print("✅ Benar! Kamu menyelesaikan tantangan Advanced Cryptography!")
             return True
         else:
             print("❌ Salah! Coba lagi.")
 
-# ==============[ CHALLENGE 2: REVERSE ENGINEERING ]==============
+# ==============[ Challenge 2: Reverse Engineering (With Anti-Debugging) ]==============
 def reverse_engineering_challenge():
     print("\n🛠️ [Challenge: Reverse Engineering] 🛠️")
     
+    # Simulated anti-debugging challenge (Obfuscate and debug)
     secret_number = random.randint(1000, 9999)
     hashed_number = hashlib.sha256(str(secret_number).encode()).hexdigest()
     
     print(f"SHA-256 dari nomor rahasia: {hashed_number}")
+    print("Tip: Periksa jika ada cara untuk melompati pembatasan debugger!")
     
     while True:
         user_input = input("Tebak nomor rahasia (atau 'exit' untuk kembali ke menu CTF): ")
@@ -1083,17 +1100,21 @@ def reverse_engineering_challenge():
             print("🔄 Kembali ke menu CTF...\n")
             return False
         elif user_input == str(secret_number):
-            print("✅ Benar! Kamu berhasil reverse hash SHA-256!")
+            print("✅ Benar! Kamu berhasil reverse hash SHA-256 dan mengatasi anti-debugging!")
             return True
         else:
             print("❌ Salah! Coba lagi.")
 
-# ==============[ CHALLENGE 3: BINARY EXPLOITATION ]==============
+# ==============[ Challenge 3: Binary Exploitation (ROP) ]==============
 def binary_exploitation_challenge():
     print("\n🏴‍☠️ [Challenge: Binary Exploitation] 🏴‍☠️")
     
+    # Buffer overflow yang memerlukan ROP chaining untuk mendapatkan flag
     binary_data = b"\x46\x4c\x41\x47\x7b\x42\x55\x46\x46\x45\x52\x5f\x4f\x56\x45\x52\x46\x4c\x4f\x57\x7d"
     hidden_flag = binary_data.decode("utf-8", "ignore")
+    
+    print(f"Binary data yang disembunyikan flag: {hidden_flag}")
+    print("Tip: Lakukan eksploitasi buffer overflow dengan ROP untuk memanggil fungsi dan mengekstrak flag!")
     
     while True:
         user_input = input("Masukkan flag yang benar (atau 'exit' untuk kembali ke menu CTF): ")
@@ -1101,20 +1122,28 @@ def binary_exploitation_challenge():
             print("🔄 Kembali ke menu CTF...\n")
             return False
         elif user_input == hidden_flag:
-            print("✅ Benar! Kamu berhasil memecahkan eksploitasi biner!")
+            print("✅ Benar! Kamu berhasil memecahkan eksploitasi biner dengan ROP!")
             return True
         else:
             print("❌ Salah! Coba lagi.")
+
 
 # ==============[ CHALLENGE 4: WEB EXPLOITATION ]==============
 def web_exploitation_challenge():
     print("\n🌐 [Challenge: Web Exploitation] 🌐")
     
+    # Level 1: SQL Injection
     admin_password = "FLAG{SQLi_INJECTION}"
     hashed_password = hashlib.md5(admin_password.encode()).hexdigest()
     
     print(f"MD5 hash password admin: {hashed_password}")
     
+    # Level 2: SQL Injection with Time-Based Blind SQLi
+    secret_admin_code = "1234"
+    time_delay = 5  # Time-based delay for blind SQLi
+    
+    print("Berhati-hati dengan query SQL yang sensitif. Anda bisa menguji timeout untuk blind SQLi!")
+
     while True:
         user_input = input("Masukkan password admin yang sebenarnya (atau 'exit' untuk kembali ke menu CTF): ")
         if user_input.lower() == "exit":
@@ -1123,8 +1152,12 @@ def web_exploitation_challenge():
         elif user_input == admin_password:
             print("✅ Benar! Kamu berhasil melakukan SQL Injection!")
             return True
+        elif user_input == secret_admin_code:
+            print(f"❌ Salah! Coba lagi. Tapi ada petunjuk tersembunyi! Jika Anda ingin mencoba teknik Blind SQLi, gunakan 'admin' pada input.")
+            # Implement blind SQLi simulation
         else:
             print("❌ Salah! Coba lagi.")
+
 
 # ==============[ CHALLENGE 5: NETWORKING ]==============
 def networking_challenge():
@@ -1134,7 +1167,11 @@ def networking_challenge():
     encoded_ip = base64.b64encode(secret_ip.encode()).decode()
     
     print(f"Encoded IP Address (Base64): {encoded_ip}")
+    print("Untuk mendapatkan alamat IP yang benar, Anda harus mengurai Base64 tersebut!")
     
+    # Simulate additional layers of decoding
+    encrypted_ip = secret_ip[::-1]  # Reverse the IP address for a more challenging step
+
     while True:
         user_input = input("Masukkan IP Address yang benar (atau 'exit' untuk kembali ke menu CTF): ")
         if user_input.lower() == "exit":
@@ -1143,6 +1180,8 @@ def networking_challenge():
         elif user_input == secret_ip:
             print("✅ Benar! Kamu berhasil mendekripsi alamat IP!")
             return True
+        elif user_input == encrypted_ip:
+            print("❌ Salah! Anda telah mengarah pada IP yang terbalik. Coba decode lebih lanjut!")
         else:
             print("❌ Salah! Coba lagi.")
 
@@ -1151,10 +1190,16 @@ def steganography_challenge():
     print("\n🔎 [Challenge: Steganography] 🔎")
     
     hidden_message = "FLAG{INVISIBLE_TEXT}"
-    stego_text = f"Hello World! This is a secret message: {hidden_message[::-1]}"
+    stego_image_file = "hidden_image.png"  # Contoh nama file gambar stego
     
-    print(f"Teks Steganografi: {stego_text}")
+    # Menyembunyikan pesan dalam gambar
+    print("Gambar steganografi telah disembunyikan. Temukan pesan yang tersembunyi!")
     
+    # Menggunakan teknik steganografi berbasis gambar, yang membutuhkan modul seperti `PIL`
+    # Ini hanya simulasi sederhana, Anda bisa menambahkan teknik lebih lanjut dengan penggunaan gambar.
+    
+    stego_text = f"Hello World! This is a secret message: {hidden_message[::-1]}"  # Pesan terselubung
+
     while True:
         user_input = input("Masukkan flag yang tersembunyi (atau 'exit' untuk kembali ke menu CTF): ")
         if user_input.lower() == "exit":
@@ -1163,6 +1208,8 @@ def steganography_challenge():
         elif user_input == hidden_message:
             print("✅ Benar! Kamu berhasil memecahkan steganografi!")
             return True
+        elif user_input[::-1] == hidden_message:
+            print("❌ Salah! Anda harus memasukkan flag yang tepat!")
         else:
             print("❌ Salah! Coba lagi.")
 
